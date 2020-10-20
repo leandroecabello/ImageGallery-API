@@ -1,5 +1,9 @@
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
+
 const app = require("./app/app");
-const { connection } = require("./database");
+const connection = require("./database");
 
 async function main() {
   try {
