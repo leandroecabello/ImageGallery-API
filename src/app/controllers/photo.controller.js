@@ -1,6 +1,7 @@
 const Photo = require("../models/Photo");
 const path = require("path");
 const fs = require("fs").promises;
+const cloudinary = require("../libs/cloudinary");
 
 class PhotoController {
   static async getAll(req, res) {
@@ -15,13 +16,16 @@ class PhotoController {
   static async add(req, res) {
     const { title, description } = req.body;
     try {
+      const result = await cloudinary.v2.uploader.upload(req.file.path);
       const newPhoto = {
         title,
         description,
-        imagePath: req.file.path,
+        imagePath: result.secure_url,
+        public_id: result.public_id,
       };
       const photo = new Photo(newPhoto);
       await photo.save();
+      await fs.unlink(req.file.path);
 
       res.status(201).json({ message: "Photo successfully saved", photo });
       console.log("Savig Photo");
@@ -67,7 +71,7 @@ class PhotoController {
     try {
       const photo = await Photo.findByIdAndDelete(id);
       if (photo) {
-        await fs.unlink(path.resolve(photo.imagePath));
+        await cloudinary.v2.uploader.destroy(photo.public_id);
         console.log("file remove");
       }
       res.status(200).json({ message: `Photo with id: ${id} was removed` });
